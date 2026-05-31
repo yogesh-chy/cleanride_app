@@ -5,7 +5,7 @@ class AppTheme {
   // Theme Color Constants
   static const Color backgroundColor = Color(0xFF0C0F12);
   static const Color foregroundColor = Color(0xFFF1F3F5);
-  
+
   static const Color cardColor = Color(0xFF151A1E);
   static const Color cardForegroundColor = Color(0xFFF1F3F5);
 
@@ -33,11 +33,7 @@ class AppTheme {
   );
 
   static const LinearGradient heroGradient = LinearGradient(
-    colors: [
-      Color(0xFF0C0F12),
-      Color(0xFF131920),
-      Color(0xFF0C0F12),
-    ],
+    colors: [Color(0xFF0C0F12), Color(0xFF131920), Color(0xFF0C0F12)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -67,7 +63,50 @@ class AppTheme {
       primaryColor: primaryColor,
       cardColor: cardColor,
       dividerColor: borderColor,
-      
+      colorScheme: const ColorScheme.dark(
+        primary: primaryColor,
+        onPrimary: primaryForegroundColor,
+        secondary: accentColor,
+        surface: cardColor,
+        onSurface: foregroundColor,
+        error: destructiveColor,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: GoogleFonts.inter(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: foregroundColor,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 72,
+        backgroundColor: cardColor.withValues(alpha: 0.96),
+        indicatorColor: primaryColor.withValues(alpha: 0.18),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return GoogleFonts.inter(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+            color: selected ? primaryColor : mutedForegroundColor,
+          );
+        }),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return IconThemeData(
+            color: selected ? primaryColor : mutedForegroundColor,
+            size: 24,
+          );
+        }),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: primaryColor,
+        foregroundColor: primaryForegroundColor,
+      ),
+
       // Text Theme
       textTheme: TextTheme(
         displayLarge: GoogleFonts.bebasNeue(
@@ -103,18 +142,12 @@ class AppTheme {
           letterSpacing: 0.5,
           color: foregroundColor,
         ),
-        bodyLarge: GoogleFonts.inter(
-          fontSize: 16,
-          color: foregroundColor,
-        ),
+        bodyLarge: GoogleFonts.inter(fontSize: 16, color: foregroundColor),
         bodyMedium: GoogleFonts.inter(
           fontSize: 14,
           color: secondaryForegroundColor,
         ),
-        bodySmall: GoogleFonts.inter(
-          fontSize: 12,
-          color: mutedForegroundColor,
-        ),
+        bodySmall: GoogleFonts.inter(fontSize: 12, color: mutedForegroundColor),
         titleLarge: GoogleFonts.bebasNeue(
           fontSize: 22,
           letterSpacing: 0.5,
@@ -136,7 +169,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: mutedColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
           borderSide: const BorderSide(color: borderColor),
@@ -158,7 +194,9 @@ class AppTheme {
           borderSide: const BorderSide(color: destructiveColor, width: 2),
         ),
         labelStyle: TextStyle(color: mutedForegroundColor),
-        hintStyle: TextStyle(color: mutedForegroundColor.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(
+          color: mutedForegroundColor.withValues(alpha: 0.7),
+        ),
       ),
 
       // Card Theme
@@ -181,9 +219,7 @@ class AppTheme {
             fontSize: 15,
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
 
@@ -196,9 +232,7 @@ class AppTheme {
             fontSize: 15,
           ),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
 
