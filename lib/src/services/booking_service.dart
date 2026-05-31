@@ -8,17 +8,24 @@ class BookingService {
 
   final ApiClient _apiClient;
 
+  List<Booking> _bookingListFromResponse(dynamic data) {
+    if (data is List) {
+      return data
+          .map((json) => Booking.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else if (data is Map<String, dynamic> && data.containsKey('results')) {
+      final results = data['results'] as List;
+      return results
+          .map((json) => Booking.fromJson(json as Map<String, dynamic>))
+          .toList();
+    }
+    return [];
+  }
+
   Future<List<Booking>> fetchMyBookings() async {
     try {
       final response = await _apiClient.dio.get('/bookings/my/');
-      final data = response.data;
-      if (data is List) {
-        return data.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
-      } else if (data is Map<String, dynamic> && data.containsKey('results')) {
-        final results = data['results'] as List;
-        return results.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
-      }
-      return [];
+      return _bookingListFromResponse(response.data);
     } on DioException catch (error) {
       throw BookingException(_messageFromDio(error));
     }
@@ -26,7 +33,9 @@ class BookingService {
 
   Future<Booking?> fetchBookingById(String id) async {
     try {
-      final response = await _apiClient.dio.get<Map<String, dynamic>>('/bookings/my/$id/');
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+        '/bookings/my/$id/',
+      );
       if (response.data != null) {
         return Booking.fromJson(response.data!);
       }
@@ -54,7 +63,8 @@ class BookingService {
           'wash_package': washPackage,
           'date': date,
           'time_slot': timeSlot,
-          if (contactPhone != null && contactPhone.isNotEmpty) 'contact_phone': contactPhone,
+          if (contactPhone != null && contactPhone.isNotEmpty)
+            'contact_phone': contactPhone,
           if (address != null && address.isNotEmpty) 'address': address,
         },
       );
@@ -94,15 +104,14 @@ class BookingService {
     try {
       final response = await _apiClient.dio.get<Map<String, dynamic>>(
         '/bookings/slots/',
-        queryParameters: {
-          'date': date,
-          'package': packageType,
-        },
+        queryParameters: {'date': date, 'package': packageType},
       );
       final data = response.data;
       if (data != null && data.containsKey('slots')) {
         final slotsList = data['slots'] as List;
-        return slotsList.map((json) => TimeSlot.fromJson(json as Map<String, dynamic>)).toList();
+        return slotsList
+            .map((json) => TimeSlot.fromJson(json as Map<String, dynamic>))
+            .toList();
       }
       return [];
     } on DioException catch (error) {
@@ -114,18 +123,52 @@ class BookingService {
     try {
       final response = await _apiClient.dio.get(
         '/bookings/queue/',
+        queryParameters: {if (mine) 'mine': 'true'},
+      );
+      return _bookingListFromResponse(response.data);
+    } on DioException catch (error) {
+      throw BookingException(_messageFromDio(error));
+    }
+  }
+
+  Future<List<Booking>> fetchAdminBookings({
+    int page = 1,
+    String? status,
+    String? search,
+  }) async {
+    try {
+      final response = await _apiClient.dio.get(
+        '/bookings/admin/',
         queryParameters: {
-          if (mine) 'mine': 'true',
+          'page': page,
+          if (status != null && status != 'all') 'status': status,
+          if (search != null && search.trim().isNotEmpty)
+            'search': search.trim(),
         },
       );
-      final data = response.data;
-      if (data is List) {
-        return data.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
-      } else if (data is Map<String, dynamic> && data.containsKey('results')) {
-        final results = data['results'] as List;
-        return results.map((json) => Booking.fromJson(json as Map<String, dynamic>)).toList();
-      }
-      return [];
+      return _bookingListFromResponse(response.data);
+    } on DioException catch (error) {
+      throw BookingException(_messageFromDio(error));
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchAdminStats() async {
+    try {
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+        '/bookings/admin/stats/',
+      );
+      return response.data ?? {};
+    } on DioException catch (error) {
+      throw BookingException(_messageFromDio(error));
+    }
+  }
+
+  Future<Map<String, dynamic>> fetchAdminTeamStats() async {
+    try {
+      final response = await _apiClient.dio.get<Map<String, dynamic>>(
+        '/bookings/admin/team-stats/',
+      );
+      return response.data ?? {};
     } on DioException catch (error) {
       throw BookingException(_messageFromDio(error));
     }

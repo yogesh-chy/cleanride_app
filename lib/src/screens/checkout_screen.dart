@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../config/api_config.dart';
 import '../config/app_theme.dart';
 import '../models/booking.dart';
 import '../models/wash_data.dart';
@@ -89,12 +90,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         'address': _addressController.text.trim(),
       });
 
-      // 2. Initiate payment on backend
-      // We pass a dummy return URL since we will poll/verify manually on app resume
-      const returnUrl = 'http://localhost:8000/api/payments/verify/';
       final result = await widget.paymentService.initiatePayment(
         bookingId: _booking!.id,
-        returnUrl: returnUrl,
+        returnUrl: ApiConfig.paymentReturnUrl,
       );
 
       final paymentUrl = result['payment_url'] as String?;
@@ -104,7 +102,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         final uri = Uri.parse(paymentUrl);
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
-          
+
           if (mounted) {
             _showVerificationDialog(pidx);
           }
@@ -151,21 +149,28 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.payment, color: AppTheme.primaryColor, size: 48),
+                  const Icon(
+                    Icons.payment,
+                    color: AppTheme.primaryColor,
+                    size: 48,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'We opened the Khalti portal in your browser. Once you complete the payment, tap below to verify.',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.mutedForegroundColor,
-                        ),
+                      color: AppTheme.mutedForegroundColor,
+                    ),
                   ),
                   if (dialogError != null) ...[
                     const SizedBox(height: 12),
                     Text(
                       dialogError!,
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: AppTheme.destructiveColor, fontSize: 13),
+                      style: const TextStyle(
+                        color: AppTheme.destructiveColor,
+                        fontSize: 13,
+                      ),
                     ),
                   ],
                   if (verifying) ...[
@@ -196,28 +201,34 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                             // 1. Verify with backend using pidx if present, or check booking paid status directly
                             if (pidx != null && pidx.isNotEmpty) {
                               try {
-                                await widget.paymentService.verifyPayment(pidx: pidx);
+                                await widget.paymentService.verifyPayment(
+                                  pidx: pidx,
+                                );
                               } catch (_) {
                                 // Ignore verify error and check booking directly as fallback
                               }
                             }
 
                             // 2. Fetch booking status
-                            final b = await widget.bookingService.fetchBookingById(widget.bookingId);
+                            final b = await widget.bookingService
+                                .fetchBookingById(widget.bookingId);
                             if (b != null && b.isPaid) {
                               if (context.mounted) {
                                 Navigator.pop(context); // Close dialog
                                 context.go('/dashboard'); // Go to dashboard
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   const SnackBar(
-                                    content: Text('Payment verified successfully!'),
+                                    content: Text(
+                                      'Payment verified successfully!',
+                                    ),
                                     backgroundColor: Colors.green,
                                   ),
                                 );
                               }
                             } else {
                               setDialogState(() {
-                                dialogError = 'Payment not completed or verified yet. Please try again.';
+                                dialogError =
+                                    'Payment not completed or verified yet. Please try again.';
                                 verifying = false;
                               });
                             }
@@ -241,9 +252,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null || _booking == null) {
@@ -258,7 +267,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.error_outline, color: AppTheme.destructiveColor, size: 48),
+                const Icon(
+                  Icons.error_outline,
+                  color: AppTheme.destructiveColor,
+                  size: 48,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   _error ?? 'An error occurred.',
@@ -318,8 +331,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       ),
                     ),
                     const Divider(height: 24),
-                    _buildSummaryRow('Vehicle Number', _booking!.vehicleNumber.toUpperCase()),
-                    _buildSummaryRow('Vehicle Type', WashData.vehicleTypeLabels[_booking!.vehicleType] ?? _booking!.vehicleType),
+                    _buildSummaryRow(
+                      'Vehicle Number',
+                      _booking!.vehicleNumber.toUpperCase(),
+                    ),
+                    _buildSummaryRow(
+                      'Vehicle Type',
+                      WashData.vehicleTypeLabels[_booking!.vehicleType] ??
+                          _booking!.vehicleType,
+                    ),
                     _buildSummaryRow('Wash Package', packageName),
                     _buildSummaryRow('Scheduled Date', _booking!.date),
                     _buildSummaryRow('Scheduled Time', _booking!.timeSlot),
@@ -329,9 +349,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       children: [
                         Text(
                           'Net Payable',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: AppTheme.mutedForegroundColor,
-                              ),
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: AppTheme.mutedForegroundColor),
                         ),
                         Text(
                           'Rs. ${price.toInt()}',
@@ -434,7 +453,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         children: [
           Text(
             label,
-            style: TextStyle(color: AppTheme.mutedForegroundColor, fontSize: 13),
+            style: TextStyle(
+              color: AppTheme.mutedForegroundColor,
+              fontSize: 13,
+            ),
           ),
           Text(
             value,

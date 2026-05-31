@@ -24,15 +24,11 @@ class PaymentService {
     }
   }
 
-  Future<Map<String, dynamic>> verifyPayment({
-    required String pidx,
-  }) async {
+  Future<Map<String, dynamic>> verifyPayment({required String pidx}) async {
     try {
       final response = await _apiClient.dio.post<Map<String, dynamic>>(
         '/payments/verify/',
-        data: {
-          'pidx': pidx,
-        },
+        data: {'pidx': pidx},
       );
       return response.data ?? {};
     } on DioException catch (error) {
@@ -45,6 +41,7 @@ class PaymentService {
     if (data is Map<String, dynamic>) {
       final message = data['message'] ?? data['detail'] ?? data['error'];
       if (message is String && message.isNotEmpty) return message;
+      if (message is Map || message is List) return message.toString();
     }
     return 'Payment processing failed. Please try again.';
   }

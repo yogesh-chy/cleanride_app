@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import 'config/app_theme.dart';
 import 'models/app_user.dart';
+import 'screens/admin_dashboard_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -28,10 +29,22 @@ class _CleanRideAppState extends State<CleanRideApp> {
   late final AuthService _authService;
   late final BookingService _bookingService;
   late final PaymentService _paymentService;
-  
+
   final authNotifier = ValueNotifier<AppUser?>(null);
   bool _checkingSession = true;
   late final GoRouter _router;
+
+  String _homeRouteFor(AppUser user) {
+    switch (user.role) {
+      case 'admin':
+        return '/admin';
+      case 'staff':
+        return '/staff';
+      case 'customer':
+      default:
+        return '/dashboard';
+    }
+  }
 
   @override
   void initState() {
@@ -48,7 +61,7 @@ class _CleanRideAppState extends State<CleanRideApp> {
       refreshListenable: authNotifier,
       redirect: (context, state) {
         if (_checkingSession) return null;
-        
+
         final user = authNotifier.value;
         final location = state.matchedLocation;
         final isLoggingIn = location == '/login' || location == '/register';
@@ -61,16 +74,22 @@ class _CleanRideAppState extends State<CleanRideApp> {
           return null;
         }
 
-        // User is logged in
         if (isLoggingIn || isHome) {
-          return user.role == 'staff' ? '/staff' : '/dashboard';
+          return _homeRouteFor(user);
         }
 
-        if (location.startsWith('/dashboard') && user.role == 'staff') {
-          return '/staff';
+        if (location.startsWith('/admin') && user.role != 'admin') {
+          return _homeRouteFor(user);
         }
-        if (location.startsWith('/staff') && user.role != 'staff') {
-          return '/dashboard';
+        if (location.startsWith('/staff') &&
+            user.role != 'staff' &&
+            user.role != 'admin') {
+          return _homeRouteFor(user);
+        }
+        if (location.startsWith('/dashboard') &&
+            user.role != 'customer' &&
+            user.role != 'admin') {
+          return _homeRouteFor(user);
         }
 
         return null;
@@ -78,7 +97,8 @@ class _CleanRideAppState extends State<CleanRideApp> {
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => HomeScreen(isLoggedIn: authNotifier.value != null),
+          builder: (context, state) =>
+              HomeScreen(isLoggedIn: authNotifier.value != null),
         ),
         GoRoute(
           path: '/login',
@@ -86,13 +106,14 @@ class _CleanRideAppState extends State<CleanRideApp> {
             authService: _authService,
             onLoggedIn: (user) {
               authNotifier.value = user;
-              context.go(user.role == 'staff' ? '/staff' : '/dashboard');
+              context.go(_homeRouteFor(user));
             },
           ),
         ),
         GoRoute(
           path: '/register',
-          builder: (context, state) => RegisterScreen(authService: _authService),
+          builder: (context, state) =>
+              RegisterScreen(authService: _authService),
         ),
         GoRoute(
           path: '/dashboard',
@@ -112,6 +133,14 @@ class _CleanRideAppState extends State<CleanRideApp> {
               paymentService: _paymentService,
             );
           },
+        ),
+        GoRoute(
+          path: '/admin',
+          builder: (context, state) => AdminDashboardScreen(
+            user: authNotifier.value!,
+            bookingService: _bookingService,
+            onLogout: _handleLogout,
+          ),
         ),
         GoRoute(
           path: '/staff',
@@ -164,11 +193,7 @@ class _CleanRideAppState extends State<CleanRideApp> {
     if (_checkingSession) {
       return const MaterialApp(
         debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          body: Center(
-            child: CircularProgressIndicator(),
-          ),
-        ),
+        home: Scaffold(body: Center(child: CircularProgressIndicator())),
       );
     }
 
